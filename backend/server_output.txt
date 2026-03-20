@@ -1,0 +1,11 @@
+[SERVER] Zig Exchange Server starting...
+[CONFIG] Host: 0.0.0.0:8001
+
+[ROUTES]
+  POST /register    - Register new user
+  POST /login       - Login user
+  GET  /health      - Server health check
+
+[SERVER] Listening on http://0.0.0.0:8001
+[SERVER] Press Ctrl+C to stop
+

@@ -1,0 +1,31 @@
+{
+  "name": "lcx-sentinel",
+  "version": "1.0.0",
+  "description": "LCX Orderbook Monitor & Frontrun Detector",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "server": "tsx src/server.ts",
+    "start": "node dist/index.js",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "axios": "^1.13.5",
+    "better-sqlite3": "^12.6.2",
+    "ccxt": "^4.5.39",
+    "chalk": "^5.6.2",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "ws": "^8.19.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^25.3.0",
+    "@types/ws": "^8.18.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}

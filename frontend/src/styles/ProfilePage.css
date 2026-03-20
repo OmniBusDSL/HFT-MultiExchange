@@ -1,0 +1,19 @@
+/* ProfilePage styles - will be fully populated after initial test */
+.profile-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.page-header {
+  margin-bottom: 1.75rem;
+  border-bottom: 2px solid var(--primary);
+  padding-bottom: 1rem;
+}
+
+.page-header h1 {
+  margin: 0;
+  color: var(--text-light);
+  font-size: 1.75rem;
+  font-weight: 700;
+}

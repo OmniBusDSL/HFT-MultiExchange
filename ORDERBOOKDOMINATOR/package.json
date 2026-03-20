@@ -1,0 +1,16 @@
+{
+  "name": "orderbook-dominator-workspace",
+  "version": "1.0.0",
+  "description": "Root control for LCX Sentinel and Dashboard",
+  "scripts": {
+    "dev:all": "concurrently --names \"SENTINEL,MONITOR,SHIELD,DASH\" --prefix \"[{name}]\" \"npm run sentinel\" \"npm run monitor\" \"npm run order-shield\" \"npm run dashboard\"",
+    "sentinel": "cd lcx-sentinel && npm run dev",
+    "api": "cd lcx-sentinel && npm run server",
+    "monitor": "cd orderbook-monitor && npm run dev",
+    "order-shield": "cd order-shield && npm run dev",
+    "dashboard": "cd shield-dashboard && zig build-exe -O ReleaseFast src/main.zig && .\\main.exe"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

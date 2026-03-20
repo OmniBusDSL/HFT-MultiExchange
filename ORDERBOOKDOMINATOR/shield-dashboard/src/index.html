@@ -1,0 +1,1349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Order Shield</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:          #0b0e11;
+  --surface:     #181a20;
+  --surface2:    #1e2329;
+  --surface3:    #2b2f36;
+  --hover:       #252a32;
+  --border:      rgba(255,255,255,0.07);
+  --border2:     rgba(255,255,255,0.13);
+  --text:        #eaecef;
+  --text-sec:    #848e9c;
+  --text-muted:  #474d57;
+  --green:       #0ecb81;
+  --green-dim:   rgba(14,203,129,0.10);
+  --red:         #f6465d;
+  --red-dim:     rgba(246,70,93,0.10);
+  --yellow:      #f0b90b;
+  --blue:        #1e90ff;
+  --blue-dim:    rgba(30,144,255,0.12);
+  --purple:      #a78bfa;
+  --depth-bid:   rgba(14,203,129,0.13);
+  --depth-ask:   rgba(246,70,93,0.13);
+  --font-ui:     'Inter', system-ui, sans-serif;
+  --font-num:    'JetBrains Mono', monospace;
+  --header-h:    48px;
+  --nav-h:       40px;
+  --lob-w:       500px;
+
+  /* Spring easing — linear() with gentle overshoot (Chrome 113+, FF 112+, Safari 17.2+) */
+  --ease-spring: linear(
+    0, 0.009 1%, 0.035 2%, 0.135 4.5%, 0.34 8%,
+    0.6 12%, 0.8 16%, 0.924 20%, 0.99 24%,
+    1.025 28%, 1.04 32%, 1.035 36%, 1.016 42%,
+    1.004 48%, 0.998 55%, 1.001 65%, 1
+  );
+  /* Fallback for older browsers */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in:       cubic-bezier(0.5, 0, 1, 0.5);
+}
+
+html, body { height: 100%; overflow: hidden; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ══ HEADER ══════════════════════════════════════════════════════════════════ */
+header {
+  height: var(--header-h);
+  min-height: var(--header-h);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 100;
+}
+.logo { display: flex; align-items: center; gap: 9px; }
+.logo-mark {
+  width: 28px; height: 28px; border-radius: 7px;
+  background: linear-gradient(135deg, #1e90ff, #a78bfa);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  box-shadow: 0 0 18px rgba(30,144,255,0.3);
+}
+.logo-text { font-size: 14px; font-weight: 700; letter-spacing: -.2px; }
+.logo-text span { color: var(--blue); }
+
+.hdiv { width: 1px; height: 18px; background: var(--border2); margin: 0 4px; }
+
+#status-pill {
+  display: flex; align-items: center; gap: 6px;
+  padding: 3px 10px; border-radius: 20px;
+  border: 1px solid var(--border2);
+  font-size: 11px; color: var(--text-sec);
+  transition: border-color .3s, color .3s;
+}
+#status-pill.ok  { border-color: rgba(14,203,129,.35); color: var(--green); }
+#status-pill.err { border-color: rgba(246,70,93,.35);  color: var(--red); }
+#status-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--text-muted); transition: all .4s;
+}
+#status-pill.ok  #status-dot { background: var(--green); box-shadow: 0 0 6px var(--green); animation: blink 2.5s ease-in-out infinite; }
+#status-pill.err #status-dot { background: var(--red);   box-shadow: 0 0 6px var(--red); }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.35} }
+
+.hstats { display: flex; gap: 20px; margin-left: 8px; }
+.hstat  { display: flex; flex-direction: column; }
+.hstat-lbl { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; }
+.hstat-val { font-size: 12px; font-weight: 600; font-family: var(--font-num); }
+
+#uptime { margin-left: auto; font-family: var(--font-num); font-size: 12px; color: var(--text-sec); letter-spacing: .5px; }
+
+/* ══ NAV TABS ════════════════════════════════════════════════════════════════ */
+.nav-tabs {
+  height: var(--nav-h);
+  min-height: var(--nav-h);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  padding: 0 16px;
+  z-index: 90;
+}
+.nav-tab {
+  display: flex; align-items: center; gap: 7px;
+  padding: 0 16px;
+  font-size: 12px; font-weight: 500;
+  color: var(--text-sec);
+  border: none; background: none;
+  cursor: pointer; font-family: var(--font-ui);
+  border-bottom: 2px solid transparent;
+  transition: color .15s, border-color .15s;
+  position: relative;
+  top: 1px; /* align border-bottom to container bottom */
+}
+.nav-tab:hover { color: var(--text); }
+.nav-tab.active { color: var(--text); border-bottom-color: var(--blue); }
+.nav-tab .tab-badge {
+  background: var(--surface3); border-radius: 20px;
+  padding: 1px 6px; font-size: 10px; font-weight: 600;
+  font-family: var(--font-num); color: var(--text-sec);
+}
+.nav-tab.active .tab-badge { background: var(--blue-dim); color: var(--blue); }
+
+/* alert badge pulse when new alerts */
+.nav-tab.has-new .tab-badge {
+  background: rgba(246,70,93,0.15); color: var(--red);
+}
+
+/* ══ SHELL — CSS Grid split ══════════════════════════════════════════════════ */
+.shell {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 0px;   /* LOB column starts collapsed */
+  overflow: hidden;
+
+  /* Spring transition on grid columns — the magic */
+  transition: grid-template-columns 420ms var(--ease-spring);
+}
+.shell.lob-open {
+  grid-template-columns: 1fr var(--lob-w);
+}
+
+/* ══ MAIN CONTENT ════════════════════════════════════════════════════════════ */
+.main-content {
+  min-width: 0;   /* critical for grid shrink */
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── View panels ── */
+.view {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  opacity: 0; pointer-events: none;
+  transform: translateY(6px);
+  transition: opacity .2s ease, transform .2s ease;
+}
+.view.active {
+  opacity: 1; pointer-events: all;
+  transform: translateY(0);
+}
+
+/* ══ ORDERS TABLE ════════════════════════════════════════════════════════════ */
+.table-scroll {
+  flex: 1; overflow-y: auto; overflow-x: auto;
+  scroll-behavior: smooth;
+}
+.table-scroll::-webkit-scrollbar { width: 4px; height: 4px; }
+.table-scroll::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 2px; }
+
+table { width: 100%; border-collapse: collapse; }
+thead { position: sticky; top: 0; z-index: 2; }
+th {
+  background: var(--surface2);
+  color: var(--text-muted); font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .7px;
+  text-align: left; padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap; user-select: none;
+}
+td { padding: 11px 16px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+tr:last-child td { border-bottom: none; }
+tbody tr { cursor: pointer; transition: background .1s; }
+tbody tr:hover td { background: var(--hover); }
+
+tbody tr.row-sel td { background: var(--blue-dim); }
+tbody tr.row-sel td:first-child { border-left: 2px solid var(--blue); padding-left: 14px; }
+
+/* row highlight from alert click */
+@keyframes row-flash {
+  0%   { background: rgba(30,144,255,0.3); }
+  100% { background: transparent; }
+}
+tbody tr.row-highlight td { animation: row-flash 1.4s ease-out; }
+
+.cell-pair    { color: var(--blue); font-weight: 600; }
+.cell-num     { font-family: var(--font-num); font-size: 12px; font-variant-numeric: tabular-nums; }
+.cell-buy     { color: var(--green); font-weight: 600; }
+.cell-sell    { color: var(--red);   font-weight: 600; }
+.cell-muted   { color: var(--text-sec); }
+.cell-oracle  { color: var(--yellow); font-family: var(--font-num); font-size: 12px; font-variant-numeric: tabular-nums; }
+.cell-dev     { font-family: var(--font-num); font-size: 11.5px; font-weight: 600; }
+.cell-dev.above { color: var(--green); }  /* order price above oracle */
+.cell-dev.below { color: var(--red); }   /* order price below oracle */
+.cell-dev.near  { color: var(--text-sec); } /* within 0.1% */
+.oracle-offline { color: var(--text-muted); font-size: 11px; }
+.cell-partial { color: var(--yellow); font-weight: 500; }
+.cell-open    { color: var(--text-muted); }
+
+.lvl-best  { color: var(--green);  font-weight: 700; font-family: var(--font-num); }
+.lvl-close { color: #52c41a;       font-family: var(--font-num); }
+.lvl-far   { color: var(--yellow); font-family: var(--font-num); }
+.lvl-deep  { color: var(--red);    font-family: var(--font-num); }
+
+.bar-wrap {
+  width: 56px; height: 4px; background: var(--surface3);
+  border-radius: 2px; overflow: hidden;
+  display: inline-block; vertical-align: middle; margin-right: 6px;
+}
+.bar-fill { height: 100%; background: var(--yellow); border-radius: 2px; transition: width .5s; }
+
+.orders-hint {
+  padding: 12px 16px; text-align: center;
+  font-size: 11px; color: var(--text-muted);
+  border-top: 1px solid var(--border);
+}
+.orders-hint kbd {
+  background: var(--surface3); border: 1px solid var(--border2);
+  border-radius: 4px; padding: 1px 5px;
+  font-size: 10px; font-family: var(--font-num); color: var(--text-sec);
+}
+
+/* ══ ALERTS TABLE ════════════════════════════════════════════════════════════ */
+.alerts-scroll {
+  flex: 1; overflow-y: auto;
+  scroll-behavior: smooth;
+}
+.alerts-scroll::-webkit-scrollbar { width: 4px; }
+.alerts-scroll::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 2px; }
+
+.alert-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 9px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px; cursor: pointer;
+  transition: background .12s;
+}
+.alert-row:last-child { border-bottom: none; }
+.alert-row:hover { background: var(--hover); }
+
+.alert-row.alert-sel { background: var(--blue-dim); }
+
+.a-ts   { color: var(--text-muted); font-family: var(--font-num); font-size: 10.5px; min-width: 56px; }
+.a-type {
+  font-weight: 700; font-size: 10.5px; letter-spacing: .4px;
+  text-transform: uppercase; min-width: 118px;
+}
+.a-type.LARGE_CANCEL  { color: var(--yellow); }
+.a-type.FILL_PARTIAL  { color: var(--blue); }
+.a-type.FILL_COMPLETE { color: var(--green); }
+.a-pair { color: var(--blue); font-weight: 600; min-width: 80px; }
+.a-msg  { color: var(--text-sec); flex: 1; }
+
+/* hint inside alerts view */
+.alerts-hint {
+  padding: 10px 16px; font-size: 11px; color: var(--text-muted);
+  border-top: 1px solid var(--border); text-align: center;
+}
+.alerts-hint kbd {
+  background: var(--surface3); border: 1px solid var(--border2);
+  border-radius: 4px; padding: 1px 5px;
+  font-size: 10px; font-family: var(--font-num); color: var(--text-sec);
+}
+
+/* ══ MARKET VIEW ════════════════════════════════════════════════════════════ */
+.market-toolbar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 16px; border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.market-search {
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: 6px; padding: 5px 10px; color: var(--text);
+  font-family: var(--font-ui); font-size: 12px; width: 180px;
+  outline: none;
+}
+.market-search:focus { border-color: var(--blue); }
+.market-hint { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+#market-table th { white-space: nowrap; }
+#market-table td { white-space: nowrap; }
+.m-pair  { color: var(--blue); font-weight: 600; font-size: 12px; }
+.m-num   { font-family: var(--font-num); font-size: 12px; font-variant-numeric: tabular-nums; }
+.m-bid   { color: var(--green); font-family: var(--font-num); font-size: 12px; }
+.m-ask   { color: var(--red);   font-family: var(--font-num); font-size: 12px; }
+.m-cg    { color: var(--yellow);font-family: var(--font-num); font-size: 12px; }
+.m-exch  { font-size: 10px; color: var(--text-muted); }
+.m-spread-pos { color: var(--green); font-family: var(--font-num); font-size: 11px; }
+.m-spread-neg { color: var(--red);   font-family: var(--font-num); font-size: 11px; }
+.m-muted { color: var(--text-muted); font-size: 11px; }
+.m-clickable { cursor: pointer; border-bottom: 1px dashed currentColor; }
+.m-clickable:hover { filter: brightness(1.4); }
+
+/* ══ ORACLE PANEL (slides in from right, same mechanism as LOB) ══════════════ */
+.oracle-panel {
+  overflow: hidden;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  display: flex;
+  pointer-events: none;
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: 0;
+  z-index: 10;
+  transition: width 380ms var(--ease-spring);
+}
+.oracle-panel.open {
+  width: 460px;
+  pointer-events: all;
+}
+.oracle-inner {
+  width: 460px; min-width: 460px;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  opacity: 0; transform: translateX(14px);
+  transition: opacity 200ms linear 140ms, transform 260ms var(--ease-out-expo) 120ms;
+}
+.oracle-panel.open .oracle-inner { opacity: 1; transform: translateX(0); }
+
+.oracle-hdr {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface2); flex-shrink: 0;
+}
+.oracle-meta { flex: 1; display: flex; flex-direction: column; gap: 1px; }
+.oracle-sub  { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .6px; }
+.oracle-title { font-size: 15px; font-weight: 700; font-family: var(--font-num); }
+
+.oracle-body { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+.oracle-body::-webkit-scrollbar { width: 3px; }
+.oracle-body::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 2px; }
+
+/* pipeline section */
+.o-section { display: flex; flex-direction: column; gap: 6px; }
+.o-section-title {
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px;
+  color: var(--text-muted); padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.o-row {
+  display: flex; align-items: center;
+  padding: 6px 10px; border-radius: 6px;
+  background: var(--surface2);
+  gap: 10px;
+}
+.o-row-label { flex: 1; font-size: 12px; color: var(--text-sec); }
+.o-row-val   { font-family: var(--font-num); font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.o-row-desc  { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+.o-row-wrap  { flex: 1; display: flex; flex-direction: column; }
+
+.o-val-oracle  { color: var(--yellow); }
+.o-val-green   { color: var(--green); }
+.o-val-red     { color: var(--red); }
+.o-val-blue    { color: var(--blue); }
+.o-val-muted   { color: var(--text-sec); }
+.o-val-purple  { color: var(--purple); }
+
+/* imbalance bar */
+.imb-bar-wrap {
+  height: 6px; border-radius: 3px; overflow: hidden;
+  background: var(--surface3); flex: 1;
+}
+.imb-bar-fill {
+  height: 100%; border-radius: 3px;
+  background: linear-gradient(90deg, var(--red) 0%, var(--yellow) 50%, var(--green) 100%);
+  transition: width .4s;
+}
+
+/* override section */
+.o-override {
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: 8px; padding: 12px 14px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.o-override-title {
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .6px; color: var(--text-muted);
+}
+.o-override-row { display: flex; gap: 8px; align-items: center; }
+.o-input {
+  flex: 1; background: var(--bg); border: 1px solid var(--border2);
+  border-radius: 6px; color: var(--text); font-family: var(--font-num);
+  font-size: 13px; padding: 6px 10px;
+  transition: border-color .15s;
+}
+.o-input:focus { outline: none; border-color: var(--blue); }
+.o-btn {
+  padding: 6px 14px; border-radius: 6px; font-size: 12px;
+  font-family: var(--font-ui); font-weight: 600; cursor: pointer;
+  border: none; transition: all .15s;
+}
+.o-btn-save  { background: var(--blue); color: #fff; }
+.o-btn-save:hover  { background: #3a9fff; }
+.o-btn-clear { background: var(--surface3); color: var(--text-sec); }
+.o-btn-clear:hover { background: var(--red-dim); color: var(--red); border: 1px solid var(--red); }
+
+.o-override-note { font-size: 10.5px; color: var(--text-muted); }
+.o-override-active {
+  font-size: 11px; color: var(--yellow); font-weight: 600;
+  padding: 4px 8px; background: var(--yellow-dim);
+  border-radius: 4px; display: inline-flex; align-items: center; gap: 5px;
+}
+
+/* pipeline flow indicator */
+.pipeline-flow {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 2px; padding: 4px 0;
+}
+.pipeline-arrow { font-size: 10px; color: var(--text-muted); }
+
+.empty-state {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 8px; color: var(--text-muted);
+}
+.empty-state .es-icon { font-size: 26px; opacity: .25; }
+.empty-state .es-txt  { font-size: 13px; }
+
+/* ══ LOB PANEL — inner wrapper pattern (no content squish) ══════════════════ */
+/*
+   The grid column animates 0px → 500px (spring).
+   .panel-lob is just an overflow:hidden clip boundary — no width animation.
+   .lob-inner is always 500px wide — content never reflows/squishes.
+   .lob-inner fades in after the panel has mostly arrived (150ms delay).
+*/
+.panel-lob {
+  overflow: hidden;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  display: flex;
+  pointer-events: none;
+}
+.shell.lob-open .panel-lob {
+  pointer-events: all;
+}
+
+/* Fixed-width inner — content always lays out at 500px, just gets clipped */
+.lob-inner {
+  width: var(--lob-w);
+  min-width: var(--lob-w);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  /* Fade + subtle slide in after panel arrives */
+  opacity: 0;
+  transform: translateX(12px);
+  transition:
+    opacity  200ms linear             150ms,
+    transform 260ms var(--ease-out-expo) 120ms;
+}
+.shell.lob-open .lob-inner {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.lob-hdr {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface2); flex-shrink: 0;
+}
+.lob-meta { flex: 1; display: flex; flex-direction: column; gap: 1px; }
+.lob-sub  { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .6px; }
+.lob-name { font-size: 15px; font-weight: 700; font-family: var(--font-num); letter-spacing: -.2px; }
+
+.btn-close {
+  background: transparent; border: 1px solid var(--border2);
+  border-radius: 6px; color: var(--text-sec);
+  font-family: var(--font-ui); font-size: 12px;
+  padding: 4px 10px; cursor: pointer;
+  transition: all .15s;
+}
+.btn-close:hover { border-color: var(--red); color: var(--red); background: var(--red-dim); }
+
+.lob-spread {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 6px 12px; background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  font-size: 11.5px; flex-shrink: 0;
+}
+.sp-lbl { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; }
+.sp-val { color: var(--yellow); font-weight: 600; font-family: var(--font-num); }
+.sp-pct { color: var(--text-muted); font-family: var(--font-num); font-size: 11px; }
+
+.lob-body {
+  display: grid; grid-template-columns: 1fr 1fr;
+  flex: 1; overflow: hidden;
+}
+.lob-col { display: flex; flex-direction: column; overflow: hidden; }
+.lob-col.bids { border-right: 1px solid var(--border); }
+
+.lob-col-hdr {
+  display: flex; justify-content: space-between;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .7px;
+  background: var(--surface2); flex-shrink: 0;
+}
+.lob-col.bids .lob-col-hdr { color: var(--green); }
+.lob-col.asks .lob-col-hdr { color: var(--red); }
+.lob-col-hdr .ch-qty { color: var(--text-muted); font-weight: 500; }
+
+.lob-rows { flex: 1; overflow-y: auto; overflow-x: hidden; }
+.lob-rows::-webkit-scrollbar { width: 3px; }
+.lob-rows::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 2px; }
+
+.lob-row {
+  display: flex; align-items: center;
+  padding: 3px 12px; font-size: 12px; gap: 6px;
+  cursor: default; position: relative;
+  background-repeat: no-repeat; background-size: 100% 100%;
+  transition: filter .1s;
+}
+.lob-row:hover { filter: brightness(1.3); }
+.lob-row.is-mine {
+  background-color: var(--blue-dim) !important;
+  outline: 1px solid rgba(30,144,255,.22); outline-offset: -1px;
+}
+.lob-price {
+  font-family: var(--font-num); font-weight: 600; font-size: 12px;
+  width: 88px; font-variant-numeric: tabular-nums;
+}
+.lob-col.bids .lob-price { color: var(--green); }
+.lob-col.asks .lob-price { color: var(--red); }
+.lob-row.is-mine .lob-price { color: var(--blue) !important; }
+.lob-qty {
+  flex: 1; text-align: right;
+  color: var(--text-sec); font-family: var(--font-num);
+  font-size: 11.5px; font-variant-numeric: tabular-nums;
+}
+.mine-tag {
+  font-size: 9.5px; font-weight: 700; color: var(--blue);
+  padding: 1px 4px; background: var(--blue-dim); border-radius: 3px;
+  white-space: nowrap;
+}
+
+.lob-empty {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 8px; color: var(--text-muted);
+}
+.lob-empty .le-icon { font-size: 26px; opacity: .25; }
+.lob-empty .le-txt  { font-size: 13px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-mark">⚔</div>
+    <div class="logo-text">Order <span>Shield</span></div>
+  </div>
+  <div class="hdiv"></div>
+  <div id="status-pill"><div id="status-dot"></div><span id="status-text">connecting…</span></div>
+  <div class="hstats">
+    <div class="hstat"><span class="hstat-lbl">Orders</span><span class="hstat-val" id="h-orders">—</span></div>
+    <div class="hstat"><span class="hstat-lbl">Tracked</span><span class="hstat-val" id="h-tracked">—</span></div>
+  </div>
+  <span id="uptime">—</span>
+</header>
+
+<!-- NAV TABS -->
+<div class="nav-tabs">
+  <button class="nav-tab active" id="tab-orders" onclick="switchView('orders')">
+    Active Orders <span class="tab-badge" id="badge-orders">0</span>
+  </button>
+  <button class="nav-tab" id="tab-alerts" onclick="switchView('alerts')">
+    Alerts <span class="tab-badge" id="badge-alerts">0</span>
+  </button>
+  <button class="nav-tab" id="tab-market" onclick="switchView('market')">
+    Market <span class="tab-badge" id="badge-market">0</span>
+  </button>
+</div>
+
+<!-- SHELL -->
+<div class="shell">
+
+  <!-- MAIN CONTENT -->
+  <div class="main-content">
+
+    <!-- VIEW: Orders -->
+    <div class="view active" id="view-orders">
+      <div class="table-scroll">
+        <table>
+          <thead><tr>
+            <th>Pair</th><th>Side</th><th>Price</th>
+            <th>Remaining</th><th>Status</th><th>Queue</th><th>Vol Ahead</th>
+            <th>Last</th><th>Oracle</th><th>Dev %</th>
+          </tr></thead>
+          <tbody id="orders-body"></tbody>
+        </table>
+        <div class="orders-hint" id="orders-hint" style="display:none">
+          Click any row to open LOB depth &nbsp;·&nbsp; <kbd>Esc</kbd> to close
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW: Alerts -->
+    <div class="view" id="view-alerts">
+      <div class="alerts-scroll" id="alerts-scroll">
+        <div class="empty-state" id="alerts-empty">
+          <span class="es-icon">🔔</span>
+          <span class="es-txt">No alerts yet</span>
+        </div>
+      </div>
+      <div class="alerts-hint">
+        Click any alert to highlight the order in the Orders view &nbsp;·&nbsp; <kbd>Esc</kbd> to close LOB
+      </div>
+    </div>
+
+    <!-- VIEW: Market -->
+    <div class="view" id="view-market">
+      <div class="market-toolbar">
+        <input class="market-search" id="market-search" type="text" placeholder="Search pair…" oninput="renderMarket()">
+        <span class="market-hint" id="market-status">Loading…</span>
+      </div>
+      <div class="table-scroll">
+        <table id="market-table">
+          <thead><tr>
+            <th>Pair</th>
+            <th title="Click to open LCX LOB">LCX Bid ↗</th><th title="Click to open LCX LOB">LCX Ask ↗</th><th>LCX Last</th>
+            <th title="Click to open external LOB">Ext Bid ↗</th><th title="Click to open external LOB">Ext Ask ↗</th>
+            <th>CoinGecko</th>
+            <th>Exchange</th>
+            <th>Spread %</th>
+          </tr></thead>
+          <tbody id="market-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ORACLE PANEL (overlay inside main-content) -->
+    <div class="oracle-panel" id="oracle-panel">
+      <div class="oracle-inner">
+        <div class="oracle-hdr">
+          <div class="oracle-meta">
+            <span class="oracle-sub">Oracle Breakdown</span>
+            <span class="oracle-title" id="oracle-pair-title">—</span>
+          </div>
+          <button class="btn-close" onclick="closeOracle()">✕ Close</button>
+        </div>
+        <div class="oracle-body" id="oracle-body">
+          <div style="color:var(--text-muted);font-size:12px;text-align:center;padding:20px">Loading…</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- LOB PANEL -->
+  <div class="panel-lob">
+   <div class="lob-inner" id="lob-inner">
+    <div class="lob-hdr">
+      <div class="lob-meta">
+        <span class="lob-sub" id="lob-source-label">LOB Depth</span>
+        <span class="lob-name" id="lob-pair-name">—</span>
+      </div>
+      <button class="btn-close" onclick="closeLob()">✕ Close</button>
+    </div>
+
+    <div class="lob-spread" id="lob-spread" style="display:none">
+      <span class="sp-lbl">Spread</span>
+      <span class="sp-val" id="sp-val">—</span>
+      <span class="sp-pct" id="sp-pct"></span>
+    </div>
+
+    <div class="lob-body" id="lob-body" style="display:none">
+      <div class="lob-col bids">
+        <div class="lob-col-hdr"><span>Bid Price</span><span class="ch-qty">Quantity</span></div>
+        <div class="lob-rows" id="bids-body"></div>
+      </div>
+      <div class="lob-col asks">
+        <div class="lob-col-hdr"><span>Ask Price</span><span class="ch-qty">Quantity</span></div>
+        <div class="lob-rows" id="asks-body"></div>
+      </div>
+    </div>
+
+    <div class="lob-empty" id="lob-empty">
+      <span class="le-icon">📊</span>
+      <span class="le-txt">Loading…</span>
+    </div>
+
+   </div><!-- .lob-inner -->
+  </div><!-- .panel-lob -->
+
+</div><!-- .shell -->
+
+<script>
+'use strict';
+
+// ── State ──────────────────────────────────────────────────────────────────────
+let orders       = [];
+let queue        = [];
+let alerts       = [];
+let lobData      = null;
+let selectedPair = null;
+let lobOpen      = false;
+let lobSource    = 'lcx';   // 'lcx' | 'ext'
+let lobExtSym    = null;    // simbolul Binance când lobSource='ext'
+let currentView  = 'orders';
+let prevAlertCnt = 0;
+let oracleMap    = {};   // pair → { oracle, lastPrice } from orderbook-monitor
+let marketData   = [];   // all pairs from orderbook-monitor for Market view
+let overrideMap  = JSON.parse(localStorage.getItem('oracleOverrides') || '{}'); // pair → manual price
+
+// ── Utilities ──────────────────────────────────────────────────────────────────
+async function fetchJson(url) {
+  try { const r = await fetch(url); if (!r.ok) throw 0; return r.json(); }
+  catch { return null; }
+}
+
+function fmt(n) {
+  if (n == null) return '—';
+  if (Math.abs(n) < 0.001 && n !== 0) return n.toExponential(3);
+  if (Math.abs(n) >= 10000) return n.toLocaleString('en', { maximumFractionDigits: 2 });
+  return n.toPrecision(5).replace(/\.?0+$/, '');
+}
+function fmtQty(n) {
+  if (n >= 1e6) return (n/1e6).toFixed(2)+'M';
+  if (n >= 1e3) return (n/1e3).toFixed(2)+'k';
+  return fmt(n);
+}
+
+// ── View switching ─────────────────────────────────────────────────────────────
+function switchView(v) {
+  currentView = v;
+  document.getElementById('view-orders').classList.toggle('active', v === 'orders');
+  document.getElementById('view-alerts').classList.toggle('active', v === 'alerts');
+  document.getElementById('view-market').classList.toggle('active', v === 'market');
+  document.getElementById('tab-orders').classList.toggle('active', v === 'orders');
+  document.getElementById('tab-alerts').classList.toggle('active', v === 'alerts');
+  document.getElementById('tab-market').classList.toggle('active', v === 'market');
+  if (v === 'alerts') document.getElementById('tab-alerts').classList.remove('has-new');
+  if (v === 'market') renderMarket();
+}
+
+// ── Oracle fetch (orderbook-monitor port 3000) ─────────────────────────────────
+async function pollOracle() {
+  const pairs = await fetchJson('http://localhost:3000/api/pairs?all=1');
+  if (!pairs) return;
+  const map = {};
+  for (const p of pairs) {
+    if (p.oracle != null || p.lastPrice != null)
+      map[p.pair] = { oracle: p.oracle ?? null, lastPrice: p.lastPrice ?? null };
+  }
+  oracleMap  = map;
+  marketData = pairs;
+  document.getElementById('badge-market').textContent = pairs.length;
+  renderOrders();
+  if (currentView === 'market') renderMarket();
+}
+
+// ── Poll ───────────────────────────────────────────────────────────────────────
+async function poll() {
+  const [status, od, qd, ad] = await Promise.all([
+    fetchJson('/api/status'),
+    fetchJson('/api/orders'),
+    fetchJson('/api/queue'),
+    fetchJson('/api/alerts'),
+  ]);
+
+  const pill = document.getElementById('status-pill');
+  const stxt = document.getElementById('status-text');
+
+  if (!status) { pill.className='err'; stxt.textContent='offline'; return; }
+
+  pill.className = 'ok';
+  stxt.textContent = 'live';
+  document.getElementById('h-orders').textContent  = status.activeOrders;
+  document.getElementById('h-tracked').textContent = status.trackedOrders;
+
+  const h = Math.floor(status.uptime/3600);
+  const m = Math.floor((status.uptime%3600)/60);
+  const s = status.uptime % 60;
+  document.getElementById('uptime').textContent =
+    `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+
+  orders = od || [];
+  queue  = qd || [];
+  alerts = ad || [];
+
+  // badge + "has-new" indicator on alerts tab
+  const alertTab = document.getElementById('tab-alerts');
+  if (alerts.length > prevAlertCnt && currentView !== 'alerts') {
+    alertTab.classList.add('has-new');
+  }
+  prevAlertCnt = alerts.length;
+
+  document.getElementById('badge-orders').textContent = orders.length;
+  document.getElementById('badge-alerts').textContent = alerts.length;
+  document.getElementById('orders-hint').style.display = orders.length ? 'block' : 'none';
+
+  renderOrders();
+  renderAlerts();
+}
+
+// ── Orders ─────────────────────────────────────────────────────────────────────
+function renderOrders() {
+  const qmap = {};
+  for (const q of queue) qmap[q.orderId] = q;
+
+  const sorted = [...orders].sort((a,b) => {
+    if (a.status==='PARTIAL' && b.status!=='PARTIAL') return -1;
+    if (b.status==='PARTIAL' && a.status!=='PARTIAL') return  1;
+    return a.pair.localeCompare(b.pair);
+  });
+
+  document.getElementById('orders-body').innerHTML = sorted.map(o => {
+    const q   = qmap[o.id];
+    const sel = o.pair === selectedPair ? 'row-sel' : '';
+
+    let qH = '<span class="cell-muted">—</span>';
+    let vH = '<span class="cell-muted">—</span>';
+    if (q) {
+      const lvl = q.priceLevelsAhead;
+      const cls = lvl===0 ? 'lvl-best' : lvl<=3 ? 'lvl-close' : lvl<=10 ? 'lvl-far' : 'lvl-deep';
+      qH = `<span class="${cls}">${lvl===0?'BEST':'L+'+lvl}</span>`;
+      const pct = q.totalAtLevel>0 ? Math.min(100,q.volumeAhead/q.totalAtLevel*100).toFixed(1) : '0.0';
+      vH = `<span class="bar-wrap"><span class="bar-fill" style="width:${pct}%"></span></span>`
+         + `<span class="cell-num cell-muted">${fmt(q.volumeAhead)} <span style="opacity:.45">(${pct}%)</span></span>`;
+    }
+
+    const sc = o.side==='BUY' ? 'cell-buy' : 'cell-sell';
+    const st = o.status==='PARTIAL' ? 'cell-partial' : 'cell-open';
+
+    // Oracle ref price + deviation
+    const orData = oracleMap[o.pair];
+    let lastHtml   = '<span class="oracle-offline">—</span>';
+    let oracleHtml = '<span class="oracle-offline">—</span>';
+    let devHtml    = '<span class="oracle-offline">—</span>';
+    if (orData) {
+      const ov = overrideMap[o.pair];
+      const displayPrice = ov ?? orData.oracle;
+
+      // Last traded price from LCX
+      if (orData.lastPrice != null) {
+        const lp = orData.lastPrice;
+        const lpVsOrder = ((lp - o.price) / o.price * 100);
+        const lpCls = Math.abs(lpVsOrder) < 0.1 ? '' : lpVsOrder > 0 ? 'color:var(--green)' : 'color:var(--red)';
+        lastHtml = `<span style="font-family:var(--font-num);font-size:12px;${lpCls}">${fmt(lp)}</span>`;
+      }
+
+      if (displayPrice != null) {
+        const ovBadge = ov ? ' <span style="font-size:9px;color:var(--yellow)">✎</span>' : '';
+        oracleHtml = `<span class="cell-oracle" style="cursor:pointer;text-decoration:underline dotted" onclick="event.stopPropagation();openOracle('${o.pair}')">${fmt(displayPrice)}${ovBadge}</span>`;
+        const devPct = ((o.price - displayPrice) / displayPrice * 100);
+        const devCls = Math.abs(devPct) < 0.1 ? 'near' : devPct > 0 ? 'above' : 'below';
+        const sign   = devPct > 0 ? '+' : '';
+        devHtml = `<span class="cell-dev ${devCls}">${sign}${devPct.toFixed(2)}%</span>`;
+      }
+    }
+
+    return `<tr class="${sel}" data-pair="${o.pair}" data-id="${o.id}" onclick="openLob('${o.pair}')">
+      <td class="cell-pair">${o.pair}</td>
+      <td class="${sc}">${o.side}</td>
+      <td class="cell-num">${fmt(o.price)}</td>
+      <td class="cell-num">${fmt(o.remaining)}</td>
+      <td class="${st}">${o.status}</td>
+      <td>${qH}</td>
+      <td>${vH}</td>
+      <td>${lastHtml}</td>
+      <td>${oracleHtml}</td>
+      <td>${devHtml}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Alerts ─────────────────────────────────────────────────────────────────────
+function renderAlerts() {
+  const scroll = document.getElementById('alerts-scroll');
+  const empty  = document.getElementById('alerts-empty');
+
+  if (!alerts.length) {
+    empty.style.display = 'flex';
+    // remove all alert-rows
+    scroll.querySelectorAll('.alert-row').forEach(el => el.remove());
+    return;
+  }
+  empty.style.display = 'none';
+
+  scroll.innerHTML = alerts.slice(0, 100).map(a => {
+    const ts = new Date(a.timestamp).toTimeString().slice(0,8);
+    return `<div class="alert-row" data-pair="${a.pair}" onclick="alertClick('${a.pair}')">
+      <span class="a-ts">${ts}</span>
+      <span class="a-type ${a.type}">${a.type.replace(/_/g,' ')}</span>
+      <span class="a-pair">${a.pair}</span>
+      <span class="a-msg">${a.message}</span>
+    </div>`;
+  }).join('');
+}
+
+// ── Market View ────────────────────────────────────────────────────────────────
+function renderMarket() {
+  const tbody  = document.getElementById('market-body');
+  const status = document.getElementById('market-status');
+  const q      = (document.getElementById('market-search')?.value ?? '').toUpperCase().trim();
+
+  if (!marketData.length) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:30px">Waiting for data…</td></tr>';
+    return;
+  }
+
+  const rows = marketData
+    .filter(p => !q || p.pair.includes(q))
+    .sort((a, b) => a.pair.localeCompare(b.pair));
+
+  let covered = 0;
+
+  tbody.innerHTML = rows.map(p => {
+    const hasExt = p.extBid != null || p.cgPrice != null;
+    if (hasExt) covered++;
+
+    const lcxBidH  = p.bid      != null ? `<span class="m-bid m-clickable" data-action="lcx-lob">${fmt(p.bid)}</span>`      : '<span class="m-muted">—</span>';
+    const lcxAskH  = p.ask      != null ? `<span class="m-ask m-clickable" data-action="lcx-lob">${fmt(p.ask)}</span>`      : '<span class="m-muted">—</span>';
+    const lcxLastH = p.lastPrice!= null ? `<span class="m-num">${fmt(p.lastPrice)}</span>`: '<span class="m-muted">—</span>';
+    const extBidH  = p.extBid   != null ? `<span class="m-bid m-clickable" data-action="ext-lob">${fmt(p.extBid)}</span>`   : '<span class="m-muted">—</span>';
+    const extAskH  = p.extAsk   != null ? `<span class="m-ask m-clickable" data-action="ext-lob">${fmt(p.extAsk)}</span>`   : '<span class="m-muted">—</span>';
+    const cgH      = p.cgPrice  != null ? `<span class="m-cg">${fmt(p.cgPrice)}</span>`   : '<span class="m-muted">—</span>';
+    const exchH    = p.extExchange ? `<span class="m-exch">${p.extExchange}</span>` : '<span class="m-muted">—</span>';
+
+    // Spread % tra LCX mid și ext mid
+    let spreadH = '<span class="m-muted">—</span>';
+    if (p.bid != null && p.ask != null && p.extBid != null && p.extAsk != null) {
+      const lcxMid = (p.bid + p.ask) / 2;
+      const extMid = (p.extBid + p.extAsk) / 2;
+      const diff   = ((lcxMid - extMid) / extMid * 100);
+      const sign   = diff > 0 ? '+' : '';
+      const cls    = Math.abs(diff) < 0.5 ? 'm-num' : diff > 0 ? 'm-spread-pos' : 'm-spread-neg';
+      spreadH = `<span class="${cls}">${sign}${diff.toFixed(2)}%</span>`;
+    }
+
+    const safeExch = (p.extExchange || '').replace(/"/g, '&quot;');
+    return `<tr data-pair="${p.pair}" data-exch="${safeExch}">
+      <td class="m-pair">${p.pair}</td>
+      <td>${lcxBidH}</td><td>${lcxAskH}</td><td>${lcxLastH}</td>
+      <td>${extBidH}</td><td>${extAskH}</td>
+      <td>${cgH}</td>
+      <td>${exchH}</td>
+      <td>${spreadH}</td>
+    </tr>`;
+  }).join('');
+
+  status.textContent = `${rows.length} pairs · ${covered} cu ref externă`;
+}
+
+// click on alert → switch to Orders view + highlight matching rows
+function alertClick(pair) {
+  // switch to orders view
+  switchView('orders');
+
+  // small delay so view is visible before scroll
+  setTimeout(() => {
+    const rows = document.querySelectorAll(`#orders-body tr[data-pair="${pair}"]`);
+    if (!rows.length) return;
+
+    // scroll first row into view
+    rows[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    // flash highlight all rows for this pair
+    rows.forEach(tr => {
+      tr.classList.remove('row-highlight'); // reset to restart animation
+      void tr.offsetWidth; // reflow
+      tr.classList.add('row-highlight');
+      setTimeout(() => tr.classList.remove('row-highlight'), 1400);
+    });
+  }, 80);
+}
+
+// ── LOB ────────────────────────────────────────────────────────────────────────
+async function refreshLob() {
+  if (!selectedPair || !lobOpen) return;
+  if (lobSource === 'ext') {
+    // LOB extern (Binance) — refresh live
+    if (!lobExtSym) return;
+    const data = await fetchJson(`https://api.binance.com/api/v3/depth?symbol=${lobExtSym}&limit=50`);
+    if (!data) return;
+    lobData = {
+      bids: (data.bids || []).map(([p,q]) => ({ price: parseFloat(p), qty: parseFloat(q) })),
+      asks: (data.asks || []).map(([p,q]) => ({ price: parseFloat(p), qty: parseFloat(q) })),
+    };
+  } else {
+    // LOB LCX
+    const data = await fetchJson(`http://localhost:3000/api/pair/${encodeURIComponent(selectedPair)}`);
+    if (!data) return;
+    lobData = data;
+  }
+  renderLob();
+}
+
+function openLob(pair) {
+  lobSource    = 'lcx';
+  lobExtSym    = null;
+  selectedPair = pair;
+  lobOpen      = true;
+  lobData      = null;
+
+  document.getElementById('lob-pair-name').textContent = pair;
+  document.getElementById('lob-empty').style.display   = 'flex';
+  document.getElementById('lob-body').style.display    = 'none';
+  document.getElementById('lob-spread').style.display  = 'none';
+  document.querySelector('.shell').classList.add('lob-open');
+
+  document.querySelectorAll('tbody tr').forEach(tr =>
+    tr.classList.toggle('row-sel', tr.dataset.pair === pair)
+  );
+
+  refreshLob();
+}
+
+function closeLob() {
+  lobOpen = false; selectedPair = null;
+  document.querySelector('.shell').classList.remove('lob-open');
+  document.querySelectorAll('tbody tr').forEach(tr => tr.classList.remove('row-sel'));
+}
+
+// Deschide LOB-ul LCX pentru o pereche (din Market view)
+function openLcxLob(pair) {
+  lobSource = 'lcx';
+  lobExtSym = null;
+  document.getElementById('lob-source-label').textContent = 'LCX LOB';
+  openLob(pair);
+}
+
+// Deschide LOB-ul extern (Binance) pentru o pereche
+function openExtLob(pair, extExchange) {
+  if (!extExchange) return;
+  const m = extExchange.match(/binance\s+([A-Z0-9]+)/i);
+  if (!m) return;
+  const binanceSym = m[1];
+
+  lobSource    = 'ext';
+  lobExtSym    = binanceSym;
+  selectedPair = pair;
+  lobOpen      = true;
+  lobData      = null;
+
+  document.getElementById('lob-source-label').textContent = 'Binance LOB';
+  document.getElementById('lob-pair-name').textContent    = binanceSym;
+  document.getElementById('lob-empty').style.display      = 'flex';
+  document.getElementById('lob-empty').querySelector('.le-txt').textContent = 'Loading…';
+  document.getElementById('lob-body').style.display       = 'none';
+  document.getElementById('lob-spread').style.display     = 'none';
+  document.querySelector('.shell').classList.add('lob-open');
+
+  refreshLob();  // primul fetch imediat — refreshLob() face tot
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLob(); });
+
+function renderLob() {
+  if (!lobData) return;
+  const bids = lobData.bids || [];
+  const asks = lobData.asks || [];
+  if (!bids.length && !asks.length) return;
+
+  document.getElementById('lob-empty').style.display  = 'none';
+  document.getElementById('lob-body').style.display   = 'grid';
+  document.getElementById('lob-spread').style.display = 'flex';
+
+  const bestBid = bids[0]?.price ?? 0;
+  const bestAsk = asks[0]?.price ?? 0;
+  const spread  = (bestBid && bestAsk) ? bestAsk - bestBid : 0;
+  document.getElementById('sp-val').textContent = fmt(spread);
+  document.getElementById('sp-pct').textContent =
+    bestBid ? `(${(spread/bestBid*100).toFixed(3)}%)` : '';
+
+  const myPrices = new Set(queue.filter(q=>q.pair===selectedPair).map(q=>q.price));
+  const allQtys  = [...bids,...asks].map(l=>l.qty).sort((a,b)=>a-b);
+  const maxQty   = allQtys[Math.floor(allQtys.length*0.95)] || 1;
+
+  const bidRow = l => {
+    const pct = Math.min(100, l.qty/maxQty*100).toFixed(1);
+    const mine = myPrices.has(l.price);
+    const bg   = mine ? '' : `background-image:linear-gradient(to left,var(--depth-bid) ${pct}%,transparent ${pct}%)`;
+    return `<div class="lob-row${mine?' is-mine':''}" style="${bg}">
+      <span class="lob-price">${fmt(l.price)}</span>
+      <span class="lob-qty">${fmtQty(l.qty)}</span>
+      ${mine?'<span class="mine-tag">◄ mine</span>':''}
+    </div>`;
+  };
+  const askRow = l => {
+    const pct = Math.min(100, l.qty/maxQty*100).toFixed(1);
+    const mine = myPrices.has(l.price);
+    const bg   = mine ? '' : `background-image:linear-gradient(to right,var(--depth-ask) ${pct}%,transparent ${pct}%)`;
+    return `<div class="lob-row${mine?' is-mine':''}" style="${bg}">
+      <span class="lob-price">${fmt(l.price)}</span>
+      <span class="lob-qty">${fmtQty(l.qty)}</span>
+      ${mine?'<span class="mine-tag">mine ►</span>':''}
+    </div>`;
+  };
+
+  document.getElementById('bids-body').innerHTML = bids.map(bidRow).join('');
+  document.getElementById('asks-body').innerHTML = asks.map(askRow).join('');
+}
+
+// ── Oracle Panel ───────────────────────────────────────────────────────────────
+let oraclePair = null;
+
+async function openOracle(pair) {
+  oraclePair = pair;
+  // Close LOB if open
+  closeLob();
+
+  document.getElementById('oracle-pair-title').textContent = pair;
+  document.getElementById('oracle-body').innerHTML =
+    '<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:30px">Loading oracle data…</div>';
+  document.getElementById('oracle-panel').classList.add('open');
+
+  // Fetch full oracle breakdown from orderbook-monitor
+  const data = await fetchJson(`http://localhost:3000/api/pair/${encodeURIComponent(pair)}`);
+  renderOraclePanel(pair, data?.oracle ?? null, data?.extSource ?? null);
+}
+
+function closeOracle() {
+  oraclePair = null;
+  document.getElementById('oracle-panel').classList.remove('open');
+}
+
+function renderOraclePanel(pair, o, extSource) {
+  const body = document.getElementById('oracle-body');
+  const ov   = overrideMap[pair];
+
+  if (!o) {
+    body.innerHTML = `
+      <div style="color:var(--text-muted);font-size:12px;text-align:center;padding:30px">
+        No oracle data — orderbook-monitor offline or pair not tracked
+      </div>`;
+    return;
+  }
+
+  const pct = v => v != null ? v.toFixed(4) : '—';
+  const p   = v => v != null ? fmt(v) : '—';
+  const dev = v => {
+    if (v == null) return '<span class="o-val-muted">—</span>';
+    const sign = v > 0 ? '+' : '';
+    const cls  = Math.abs(v) < 0.1 ? 'o-val-muted' : v > 0 ? 'o-val-green' : 'o-val-red';
+    return `<span class="${cls}">${sign}${v.toFixed(3)}%</span>`;
+  };
+
+  const imbPct = (o.imbalance * 100).toFixed(1);
+  const imbColor = o.imbalance > 0.6 ? 'var(--green)' : o.imbalance < 0.4 ? 'var(--red)' : 'var(--yellow)';
+
+  const overrideSection = `
+    <div class="o-override">
+      <div class="o-override-title">Manual Override</div>
+      ${ov ? `<div class="o-override-active">✎ Override active: ${fmt(ov)}</div>` : ''}
+      <div style="font-size:11px;color:var(--text-muted)">
+        Impune un preț de referință manual — afectează coloana Oracle și Dev% din tabel.
+        Salvat în browser (localStorage).
+      </div>
+      <div class="o-override-row">
+        <input class="o-input" id="override-input" type="number" step="any"
+               placeholder="e.g. ${p(o.oraclePrice)}"
+               value="${ov ?? ''}">
+        <button class="o-btn o-btn-save" onclick="saveOverride('${pair}')">Save</button>
+        ${ov ? `<button class="o-btn o-btn-clear" onclick="clearOverride('${pair}')">Clear</button>` : ''}
+      </div>
+    </div>`;
+
+  body.innerHTML = `
+
+    <!-- PIPELINE BREAKDOWN -->
+    <div class="o-section">
+      <div class="o-section-title">Pipeline — cum s-a calculat prețul</div>
+
+      <div class="o-row">
+        <div class="o-row-wrap">
+          <span class="o-row-label">① VAMP₅ <span style="color:var(--text-muted);font-size:10px">(Volume-Adjusted Mid, top 5 levels)</span></span>
+          <span class="o-row-desc">Σ(P_bid × V_ask) + Σ(P_ask × V_bid) / (V_total × N)</span>
+        </div>
+        <span class="o-row-val o-val-blue">${p(o.vamp)}</span>
+      </div>
+
+      <div class="o-row">
+        <div class="o-row-wrap">
+          <span class="o-row-label">② Microprice <span style="color:var(--text-muted);font-size:10px">(Stoikov 2017)</span></span>
+          <span class="o-row-desc">mid + (spread/2) × (2I−1) × 0.5</span>
+        </div>
+        <span class="o-row-val o-val-blue">${p(o.microprice)}</span>
+      </div>
+
+      <div class="o-row" style="background:var(--blue-dim);border:1px solid rgba(30,144,255,.15)">
+        <div class="o-row-wrap">
+          <span class="o-row-label" style="color:var(--blue)">Tier 1 Base <span style="color:var(--text-muted);font-size:10px">(VAMP + Micro) / 2</span></span>
+        </div>
+        <span class="o-row-val o-val-blue">${p((o.vamp + o.microprice) / 2)}</span>
+      </div>
+
+      ${o.externalMid != null ? `
+      <div class="o-row">
+        <div class="o-row-wrap">
+          <span class="o-row-label">③ External Mid <span style="color:var(--text-muted);font-size:10px">${extSource ? `(${extSource})` : '(Kraken + Coinbase avg)'}</span></span>
+          <span class="o-row-desc">Tier 2 — preț extern real-time</span>
+        </div>
+        <span class="o-row-val o-val-purple">${p(o.externalMid)}</span>
+      </div>
+      <div class="o-row" style="background:rgba(168,139,250,.07);border:1px solid rgba(168,139,250,.15)">
+        <div class="o-row-wrap">
+          <span class="o-row-label" style="color:var(--purple)">Blended Base <span style="color:var(--text-muted);font-size:10px">(Tier1 + Tier2) / 2</span></span>
+        </div>
+        <span class="o-row-val o-val-purple">${p(((o.vamp + o.microprice) / 2 + o.externalMid) / 2)}</span>
+      </div>
+      ` : `
+      <div class="o-row">
+        <div class="o-row-wrap">
+          <span class="o-row-label">③ External Mid</span>
+          <span class="o-row-desc">${extSource ? `Descoperire în curs: ${extSource}` : 'Nicio sursă externă găsită'}</span>
+        </div>
+        <span class="o-row-val o-val-muted">N/A</span>
+      </div>
+      `}
+
+      <div class="o-row">
+        <div class="o-row-wrap">
+          <span class="o-row-label">④ Kalman Filter <span style="color:var(--text-muted);font-size:10px">(noise reduction)</span></span>
+          <span class="o-row-desc">Q = rolling variance(30 samples), R = (spread/2)²/3</span>
+        </div>
+        <span class="o-row-val o-val-muted">→ aplicat</span>
+      </div>
+
+      <div class="o-row" style="background:var(--yellow-dim);border:1px solid rgba(240,185,11,.2)">
+        <div class="o-row-wrap">
+          <span class="o-row-label" style="color:var(--yellow)">⑤ Oracle Final <span style="color:var(--text-muted);font-size:10px">(EMA 30s half-life)</span></span>
+        </div>
+        <span class="o-row-val o-val-oracle" style="font-size:15px">${p(o.oraclePrice)}</span>
+      </div>
+    </div>
+
+    <!-- MARKET MICROSTRUCTURE -->
+    <div class="o-section">
+      <div class="o-section-title">Microstructură LOB</div>
+
+      <div class="o-row">
+        <span class="o-row-label">Spread</span>
+        <span class="o-row-val o-val-muted">${p(o.spread)}</span>
+      </div>
+
+      <div class="o-row" style="flex-direction:column;gap:6px;align-items:stretch">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span class="o-row-label">Imbalance <span style="color:var(--text-muted);font-size:10px">I = V_bid / (V_bid + V_ask)</span></span>
+          <span class="o-row-val" style="color:${imbColor}">${imbPct}% ${o.imbalance > 0.5 ? '▲ buy' : '▼ sell'}</span>
+        </div>
+        <div class="imb-bar-wrap">
+          <div class="imb-bar-fill" style="width:${imbPct}%"></div>
+        </div>
+      </div>
+
+      <div class="o-row">
+        <div class="o-row-wrap">
+          <span class="o-row-label">Dev Tier 1 <span style="color:var(--text-muted);font-size:10px">(LCX mid vs oracle)</span></span>
+        </div>
+        ${dev(o.deviation)}
+      </div>
+
+      ${o.tier2Deviation != null ? `
+      <div class="o-row">
+        <div class="o-row-wrap">
+          <span class="o-row-label">Dev Tier 2 <span style="color:var(--text-muted);font-size:10px">(LCX mid vs external)</span></span>
+        </div>
+        ${dev(o.tier2Deviation)}
+      </div>` : ''}
+    </div>
+
+    <!-- OVERRIDE -->
+    ${overrideSection}
+  `;
+}
+
+function saveOverride(pair) {
+  const val = parseFloat(document.getElementById('override-input').value);
+  if (isNaN(val) || val <= 0) return;
+  overrideMap[pair] = val;
+  localStorage.setItem('oracleOverrides', JSON.stringify(overrideMap));
+  renderOrders();
+  // Re-render oracle panel with updated override
+  const data = oracleMap[pair];
+  if (data) renderOraclePanel(pair, { oraclePrice: data.oracle, microprice: null, vamp: null, imbalance: 0.5, spread: null, deviation: null, externalMid: null, tier2Deviation: null });
+  openOracle(pair); // reload full data
+}
+
+function clearOverride(pair) {
+  delete overrideMap[pair];
+  localStorage.setItem('oracleOverrides', JSON.stringify(overrideMap));
+  renderOrders();
+  openOracle(pair); // reload
+}
+
+// ── Market table click delegation ─────────────────────────────────────────────
+document.getElementById('market-body').addEventListener('click', e => {
+  const span = e.target.closest('[data-action]');
+  if (!span) return;
+  const tr   = span.closest('tr[data-pair]');
+  if (!tr) return;
+  const pair = tr.dataset.pair;
+  const exch = tr.dataset.exch || '';
+  if (span.dataset.action === 'lcx-lob') {
+    openLcxLob(pair);
+  } else if (span.dataset.action === 'ext-lob') {
+    openExtLob(pair, exch);
+  }
+});
+
+// ── Boot ───────────────────────────────────────────────────────────────────────
+poll();
+pollOracle();
+setInterval(poll,        1_000);
+setInterval(refreshLob,  1_000);
+setInterval(pollOracle,  2_000);  // oracle updates every 2s (less critical)
+</script>
+</body>
+</html>
